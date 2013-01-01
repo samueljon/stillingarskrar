@@ -1,0 +1,4 @@
+stillingarskrar
+===============
+
+Ýmsar stillingarskrár
