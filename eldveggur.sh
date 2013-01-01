@@ -2,6 +2,9 @@
 #
 # Höfundur: Samúel Jón Gunnarsson
 # Dags: 20130101
+#
+# Smá debugging tips: watch iptables -nvL sýnir þér hvaða reglur 
+# er verið að nota og þú sérð teljarana hækka með aðstoð watch. 
 ################################################################
 echo "Set upp eldvegg með tómat sinnep og steiktum..."
 #Hér eru grunnskilgreiningar fyrir eldvegginn þeas. hvaða 
@@ -63,15 +66,15 @@ iptables -A INPUT -i $INNRANETKORT -s $INNRANET -d 255.255.255.255 -j ACCEPT -m 
 iptables -A INPUT -i lo -s $INTERNET -d $INTERNET -j ACCEPT
 # Öll umferð inn á innranetkort frá innra neti er leyfð
 iptables -A INPUT -i $INNRANETKORT -s $INNRANET -d $INTERNET -j ACCEPT
-# Hundsa traffík og skrá frá ytri tölum sem þykjast vera á innraneti (IP SPoofing). 
-iptables -A INPUT -i $YTRANETKORT -s $INNRANET -d $INTERNET -j hundsa-og-skra
-# Leyfa tengdri NAT umferð að flæða inn.
-iptables -A INPUT -i $YTRANETKORT -s $INTERNET -d $YTRITALA -m state --state ESTABLISHED,RELATED -j ACCEPT
 # Opnanir f. DHCP þjón.
 iptables -A INPUT -i $INNRANETKORT -m state --state NEW -m tcp -p tcp --dport 67 -j ACCEPT -m comment --comment "DHCP"
 iptables -A INPUT -i $INNRANETKORT -m state --state NEW -m udp -p udp --dport 67 -j ACCEPT -m comment --comment "DHCP"
 iptables -A INPUT -i $INNRANETKORT -m state --state NEW -m tcp -p tcp --dport 68 -j ACCEPT -m comment --comment "DHCP"
 iptables -A INPUT -i $INNRANETKORT -m state --state NEW -m udp -p udp --dport 68 -j ACCEPT -m comment --comment "DHCP"
+# Hundsa traffík og skrá frá ytri tölum sem þykjast vera á innraneti (IP SPoofing). 
+iptables -A INPUT -i $YTRANETKORT -s $INNRANET -d $INTERNET -j hundsa-og-skra
+# Leyfa tengdri NAT umferð að flæða inn.
+iptables -A INPUT -i $YTRANETKORT -s $INTERNET -d $YTRITALA -m state --state ESTABLISHED,RELATED -j ACCEPT
 echo "            Opna fyrir umferð frá umheiminum inn á miðlarann"
 iptables -A INPUT -i $YTRANETKORT -m state --state NEW,ESTABLISHED,RELATED -p tcp -s $INTERNET -d $YTRITALA --dport 80 -j ACCEPT -m comment --comment "HTTP"
 iptables -A INPUT -i $YTRANETKORT -m state --state NEW,ESTABLISHED,RELATED -p tcp -s $INTERNET -d $YTRITALA --dport 443 -j ACCEPT -m comment --comment "HTTPS"
@@ -87,8 +90,8 @@ echo "        Hleð inn OUTPUT reglum"
 #######################################################################
 # Öll traffík á loopback netkorti er leyfð.
 iptables -A OUTPUT -o lo -s $INTERNET -d $INTERNET -j ACCEPT -m comment --comment "lo -> internet"
-# local interface, any source going to local net is valid
-iptables -A OUTPUT -o $INNRANETKORT -s $INNRITALA -d $INNRANET -j ACCEPT -m comment --comment "eth0 -> server -> internet"
+# Traffík frá innra netkorti inn á innranet er leyfð.
+iptables -A OUTPUT -o $INNRANETKORT -s $INNRITALA -d $INNRANET -j ACCEPT -m comment --comment "eth0 -> INNRITALA -> INNRANET"
 # Leyfum multicast og broadcast traffík fyrir UPNP,MDNS og önnur skemmtilegheit.
 iptables -A OUTPUT -o $INNRANETKORT -s $INNRANET -d 224.0.0.0/4 -j ACCEPT -m comment --comment "Multicast RFC 5771"
 iptables -A OUTPUT -o $INNRANETKORT -s $INNRANET -d 255.255.255.255 -j ACCEPT -m comment --comment "Broadcast - RFC 919"
